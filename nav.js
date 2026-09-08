@@ -13,6 +13,32 @@ const grid = document.getElementById('grid');
 let editing = false;
 let modalIndex = -1; // -1 = 新增
 let pendingIcon = null; // 本轮弹窗里上传的 dataURL
+let lastFile = null; // 本轮弹窗里上传的原始文件（切换处理方式时重绘用）
+
+// 按 fit 模式把图片画进 128x128 画布
+// contain: 等比缩放完整显示（留边）| stretch: 拉伸填满 | cover: 居中裁剪
+function drawFitted(ctx, img, fit) {
+  const S = 128;
+  if (fit === 'stretch') {
+    ctx.drawImage(img, 0, 0, S, S);
+  } else if (fit === 'cover') {
+    const s = Math.min(img.width, img.height);
+    ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, S, S);
+  } else { // contain（默认）
+    const k = Math.min(S / img.width, S / img.height);
+    ctx.drawImage(img, (S - img.width * k) / 2, (S - img.height * k) / 2, img.width * k, img.height * k);
+  }
+}
+function redrawPending() {
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    drawFitted(c.getContext('2d'), img, document.getElementById('fFit').value);
+    pendingIcon = c.toDataURL('image/png');
+  };
+  img.src = URL.createObjectURL(lastFile);
+}
 
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(links)); } catch (e) { alert('保存失败：数据过大'); }
@@ -95,10 +121,12 @@ function render() {
 function openModal(i) {
   modalIndex = i;
   pendingIcon = null;
+  lastFile = null;
   const l = i >= 0 ? links[i] : { name: '', url: '', icon: null };
   document.getElementById('fName').value = l.name;
   document.getElementById('fUrl').value = l.url;
   document.getElementById('fIcon').value = '';
+  document.getElementById('fFit').value = l.fit || 'contain';
   document.getElementById('delBtn').style.display = i >= 0 ? '' : 'none';
   document.getElementById('mask').classList.add('show');
   document.getElementById('fName').focus();
@@ -111,7 +139,11 @@ document.getElementById('saveBtn').onclick = () => {
   const name = document.getElementById('fName').value.trim();
   const url = normalize(document.getElementById('fUrl').value);
   if (!name || !url) { alert('名称和网址都要填'); return; }
-  const item = { name, url, icon: pendingIcon !== null ? pendingIcon : (modalIndex >= 0 ? links[modalIndex].icon : null) };
+  const item = {
+    name, url,
+    icon: pendingIcon !== null ? pendingIcon : (modalIndex >= 0 ? links[modalIndex].icon : null),
+    fit: document.getElementById('fFit').value,
+  };
   if (modalIndex >= 0) links[modalIndex] = item;
   else links.push(item);
   save(); render(); closeModal();
@@ -129,16 +161,11 @@ document.getElementById('mask').addEventListener('click', (e) => {
 document.getElementById('fIcon').onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas');
-    c.width = c.height = 128;
-    const ctx = c.getContext('2d');
-    const s = Math.min(img.width, img.height);
-    ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 128, 128);
-    pendingIcon = c.toDataURL('image/png');
-  };
-  img.src = URL.createObjectURL(file);
+  lastFile = file;
+  redrawPending();
+};
+document.getElementById('fFit').onchange = () => {
+  if (lastFile) redrawPending(); // 已传图后切换处理方式，实时重绘
 };
 
 // 编辑模式开关

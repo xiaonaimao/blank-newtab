@@ -135,13 +135,13 @@
     #modal { background: #2a2a2a; }
   }
   #modal label { display: block; font-size: 12px; margin: 12px 0 4px; color: #888; }
-  #modal input[type=text] {
+  #modal input[type=text], #modal select {
     width: 100%; box-sizing: border-box; padding: 7px 9px;
     border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
     background: transparent; color: inherit;
   }
   @media (prefers-color-scheme: dark) {
-    #modal input[type=text] { border-color: #555; }
+    #modal input[type=text], #modal select { border-color: #555; }
   }
   #modal .row { display: flex; gap: 10px; margin-top: 18px; }
   #modal button {
@@ -170,6 +170,12 @@
     <input type="text" id="fUrl" placeholder="bilibili.com 或 https://...">
     <label>图标（可选，留空则自动抓网站图标）</label>
     <input type="file" id="fIcon" accept="image/*" style="font-size:12px">
+    <label>非方形图片的处理方式</label>
+    <select id="fFit">
+      <option value="contain">完整显示（留白边，默认）</option>
+      <option value="stretch">拉伸填满（可能变形）</option>
+      <option value="cover">居中裁剪（只留中间）</option>
+    </select>
     <div class="row">
       <button id="delBtn" style="display:none">删除</button>
       <button id="cancelBtn">取消</button>
