@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "极简新标签页",
+  "version": "2.2.1",
+  "description": "空白页 + 自由快捷方式：多行网格、可自定义图标、两行标题。右下角铅笔进入编辑模式，平时页面完全纯净。零权限、数据存本机。",
+  "chrome_url_overrides": {
+    "newtab": "nav.html"
+  }
+}
