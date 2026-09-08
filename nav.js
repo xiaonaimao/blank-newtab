@@ -69,16 +69,22 @@ function render() {
       img.src = l.icon;
       thumb.appendChild(img);
     } else {
+      // 图标三级回退：浏览器 favicon 缓存（与标签页/书签同源）→ 站点 /favicon.ico → 首字母色块
       const img = document.createElement('img');
-      img.src = originOf(l.url) + '/favicon.ico';
       img.onerror = () => {
-        const lt = document.createElement('div');
-        lt.className = 'letter';
-        lt.style.background = 'hsl(' + hueOf(l.name) + ',45%,55%)';
-        lt.textContent = (l.name || '?').trim().charAt(0).toUpperCase();
-        img.replaceWith(lt);
+        const fallback = document.createElement('img');
+        fallback.onerror = () => {
+          const lt = document.createElement('div');
+          lt.className = 'letter';
+          lt.style.background = 'hsl(' + hueOf(l.name) + ',45%,55%)';
+          lt.textContent = (l.name || '?').trim().charAt(0).toUpperCase();
+          img.replaceWith(lt);
+        };
+        img.replaceWith(fallback);
+        fallback.src = originOf(l.url) + '/favicon.ico';
       };
       thumb.appendChild(img);
+      img.src = chrome.runtime.getURL('/_favicon/?pageUrl=' + encodeURIComponent(l.url) + '&size=32');
     }
 
     const name = document.createElement('div');
